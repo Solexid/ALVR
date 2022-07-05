@@ -7,7 +7,6 @@
 #include <GLES3/gl3.h>
 #include <android/log.h>
 #include <android/native_window_jni.h>
-#include <glm/gtc/quaternion.hpp>
 #include <map>
 #include <thread>
 #include <unistd.h>
@@ -226,7 +225,9 @@ uint64_t X_CLICK;
 uint64_t X_TOUCH;
 uint64_t Y_CLICK;
 uint64_t Y_TOUCH;
+uint64_t LEFT_SQUEEZE_CLICK;
 uint64_t LEFT_SQUEEZE_VALUE;
+uint64_t LEFT_TRIGGER_CLICK;
 uint64_t LEFT_TRIGGER_VALUE;
 uint64_t LEFT_TRIGGER_TOUCH;
 uint64_t LEFT_THUMBSTICK_X;
@@ -234,7 +235,9 @@ uint64_t LEFT_THUMBSTICK_Y;
 uint64_t LEFT_THUMBSTICK_CLICK;
 uint64_t LEFT_THUMBSTICK_TOUCH;
 uint64_t LEFT_THUMBREST_TOUCH;
+uint64_t RIGHT_SQUEEZE_CLICK;
 uint64_t RIGHT_SQUEEZE_VALUE;
+uint64_t RIGHT_TRIGGER_CLICK;
 uint64_t RIGHT_TRIGGER_VALUE;
 uint64_t RIGHT_TRIGGER_TOUCH;
 uint64_t RIGHT_THUMBSTICK_X;
@@ -360,71 +363,37 @@ void updateButtons() {
                 continue;
             }
 
-            if (capabilities.ControllerCapabilities & ovrControllerCaps_ModelOculusTouch) {
-                if (capabilities.ControllerCapabilities & ovrControllerCaps_LeftHand) {
-                    updateBinary(MENU_CLICK, inputState.Buttons & ovrButton_Enter);
-                    updateBinary(X_CLICK, inputState.Buttons & ovrButton_X);
-                    updateBinary(X_TOUCH, inputState.Touches & ovrTouch_X);
-                    updateBinary(Y_CLICK, inputState.Buttons & ovrButton_Y);
-                    updateBinary(Y_TOUCH, inputState.Touches & ovrTouch_Y);
-                    updateScalar(LEFT_SQUEEZE_VALUE, inputState.GripTrigger);
-                    updateScalar(LEFT_TRIGGER_VALUE, inputState.IndexTrigger);
-                    updateBinary(LEFT_TRIGGER_TOUCH, inputState.Touches & ovrTouch_IndexTrigger);
-                    updateScalar(LEFT_THUMBSTICK_X, inputState.Joystick.x);
-                    updateScalar(LEFT_THUMBSTICK_Y, inputState.Joystick.y);
-                    updateBinary(LEFT_THUMBSTICK_CLICK, inputState.Buttons & ovrButton_Joystick);
-                    updateBinary(LEFT_THUMBSTICK_TOUCH, inputState.Touches & ovrTouch_LThumb);
-                    updateBinary(LEFT_THUMBREST_TOUCH, inputState.Touches & ovrTouch_ThumbRest);
-                } else {
-                    updateBinary(A_CLICK, inputState.Buttons & ovrButton_A);
-                    updateBinary(A_TOUCH, inputState.Touches & ovrTouch_A);
-                    updateBinary(B_CLICK, inputState.Buttons & ovrButton_B);
-                    updateBinary(B_TOUCH, inputState.Touches & ovrTouch_B);
-                    updateScalar(RIGHT_SQUEEZE_VALUE, inputState.GripTrigger);
-                    updateScalar(RIGHT_TRIGGER_VALUE, inputState.IndexTrigger);
-                    updateBinary(RIGHT_TRIGGER_TOUCH, inputState.Touches & ovrTouch_IndexTrigger);
-                    updateScalar(RIGHT_THUMBSTICK_X, inputState.Joystick.x);
-                    updateScalar(RIGHT_THUMBSTICK_Y, inputState.Joystick.y);
-                    updateBinary(RIGHT_THUMBSTICK_CLICK, inputState.Buttons & ovrButton_Joystick);
-                    updateBinary(RIGHT_THUMBSTICK_TOUCH, inputState.Touches & ovrTouch_RThumb);
-                    updateBinary(RIGHT_THUMBREST_TOUCH, inputState.Touches & ovrTouch_ThumbRest);
-                }
+            if (capabilities.ControllerCapabilities & ovrControllerCaps_LeftHand) {
+                updateBinary(MENU_CLICK, inputState.Buttons & ovrButton_Enter);
+                updateBinary(X_CLICK, inputState.Buttons & ovrButton_X);
+                updateBinary(X_TOUCH, inputState.Touches & ovrTouch_X);
+                updateBinary(Y_CLICK, inputState.Buttons & ovrButton_Y);
+                updateBinary(Y_TOUCH, inputState.Touches & ovrTouch_Y);
+                updateBinary(LEFT_SQUEEZE_CLICK, inputState.Buttons & ovrButton_GripTrigger);
+                updateScalar(LEFT_SQUEEZE_VALUE, inputState.GripTrigger);
+                updateBinary(LEFT_TRIGGER_CLICK, inputState.Buttons & ovrButton_Trigger);
+                updateScalar(LEFT_TRIGGER_VALUE, inputState.IndexTrigger);
+                updateBinary(LEFT_TRIGGER_TOUCH, inputState.Touches & ovrTouch_IndexTrigger);
+                updateScalar(LEFT_THUMBSTICK_X, inputState.Joystick.x);
+                updateScalar(LEFT_THUMBSTICK_Y, inputState.Joystick.y);
+                updateBinary(LEFT_THUMBSTICK_CLICK, inputState.Buttons & ovrButton_Joystick);
+                updateBinary(LEFT_THUMBSTICK_TOUCH, inputState.Touches & ovrTouch_LThumb);
+                updateBinary(LEFT_THUMBREST_TOUCH, inputState.Touches & ovrTouch_ThumbRest);
             } else {
-                // Remap oculus go/gearvr controller to quest.
-                // todo: remap on server side
-                if (capabilities.ControllerCapabilities & ovrControllerCaps_LeftHand) {
-                    updateBinary(X_CLICK, inputState.Buttons & ovrButton_Enter);
-                    updateBinary(X_TOUCH, inputState.TrackpadStatus);
-                    updateBinary(LEFT_THUMBSTICK_TOUCH, inputState.TrackpadStatus);
-                    updateScalar(LEFT_THUMBSTICK_X,
-                                 inputState.TrackpadPosition.x / capabilities.TrackpadMaxX * 2.0f -
-                                 1.0f);
-                    updateScalar(LEFT_THUMBSTICK_Y,
-                                 inputState.TrackpadPosition.y / capabilities.TrackpadMaxY * 2.0f -
-                                 1.0f);
-
-                    updateBinary(Y_CLICK, inputState.Buttons & ovrButton_Back);
-                    updateBinary(Y_TOUCH, inputState.Buttons & ovrButton_Back);
-
-                    updateBinary(LEFT_TRIGGER_VALUE, inputState.Buttons & ovrButton_A);
-                    updateBinary(LEFT_TRIGGER_TOUCH, inputState.Buttons & ovrButton_A);
-                } else {
-                    updateBinary(A_CLICK, inputState.Buttons & ovrButton_Enter);
-                    updateBinary(A_TOUCH, inputState.TrackpadStatus);
-                    updateBinary(RIGHT_THUMBSTICK_TOUCH, inputState.TrackpadStatus);
-                    updateScalar(RIGHT_THUMBSTICK_X,
-                                 inputState.TrackpadPosition.x / capabilities.TrackpadMaxX * 2.0f -
-                                 1.0f);
-                    updateScalar(RIGHT_THUMBSTICK_Y,
-                                 inputState.TrackpadPosition.y / capabilities.TrackpadMaxY * 2.0f -
-                                 1.0f);
-
-                    updateBinary(B_CLICK, inputState.Buttons & ovrButton_Back);
-                    updateBinary(B_TOUCH, inputState.Buttons & ovrButton_Back);
-
-                    updateBinary(RIGHT_TRIGGER_VALUE, inputState.Buttons & ovrButton_A);
-                    updateBinary(RIGHT_TRIGGER_TOUCH, inputState.Buttons & ovrButton_A);
-                }
+                updateBinary(A_CLICK, inputState.Buttons & ovrButton_A);
+                updateBinary(A_TOUCH, inputState.Touches & ovrTouch_A);
+                updateBinary(B_CLICK, inputState.Buttons & ovrButton_B);
+                updateBinary(B_TOUCH, inputState.Touches & ovrTouch_B);
+                updateBinary(RIGHT_SQUEEZE_CLICK, inputState.Buttons & ovrButton_GripTrigger);
+                updateScalar(RIGHT_SQUEEZE_VALUE, inputState.GripTrigger);
+                updateBinary(RIGHT_TRIGGER_CLICK, inputState.Buttons & ovrButton_Trigger);
+                updateScalar(RIGHT_TRIGGER_VALUE, inputState.IndexTrigger);
+                updateBinary(RIGHT_TRIGGER_TOUCH, inputState.Touches & ovrTouch_IndexTrigger);
+                updateScalar(RIGHT_THUMBSTICK_X, inputState.Joystick.x);
+                updateScalar(RIGHT_THUMBSTICK_Y, inputState.Joystick.y);
+                updateBinary(RIGHT_THUMBSTICK_CLICK, inputState.Buttons & ovrButton_Joystick);
+                updateBinary(RIGHT_THUMBSTICK_TOUCH, inputState.Touches & ovrTouch_RThumb);
+                updateBinary(RIGHT_THUMBREST_TOUCH, inputState.Touches & ovrTouch_ThumbRest);
             }
         }
 
@@ -601,13 +570,7 @@ void updateHapticsState() {
 AlvrEyeInput trackingToEyeInput(ovrTracking2 *tracking, int eye) {
     auto q = tracking->HeadPose.Pose.Orientation;
 
-    auto v = glm::mat4();
-    for (int x = 0; x < 4; x++) {
-        for (int y = 0; y < 4; y++) {
-            v[x][y] = tracking->Eye[eye].ViewMatrix.M[y][x];
-        }
-    }
-    v = glm::inverse(v);
+    auto v = ovrMatrix4f_Inverse(&tracking->Eye[eye].ViewMatrix);
 
     EyeFov fov;
     if (eye == 0) {
@@ -618,9 +581,9 @@ AlvrEyeInput trackingToEyeInput(ovrTracking2 *tracking, int eye) {
 
     auto input = AlvrEyeInput{};
     input.orientation = AlvrQuat{q.x, q.y, q.z, q.w};
-    input.position[0] = v[3][0];
-    input.position[1] = v[3][1];
-    input.position[2] = v[3][2];
+    input.position[0] = v.M[0][3];
+    input.position[1] = v.M[1][3];
+    input.position[2] = v.M[2][3];
     input.fov = fov;
 
     return input;
@@ -708,7 +671,7 @@ void trackingThread() {
         headMotion.device_id = HEAD_PATH;
         memcpy(&headMotion.orientation, &headTracking.HeadPose.Pose.Orientation, 4 * 4);
         memcpy(headMotion.position, &headTracking.HeadPose.Pose.Position, 4 * 3);
-        // Note: do not copy velocities. Avoid reprojetion in SteamVR
+        // Note: do not copy velocities. Avoid reprojection in SteamVR
         motionVec.push_back(headMotion);
 
         {
@@ -827,7 +790,9 @@ Java_com_polygraphene_alvr_OvrActivity_initializeNative(JNIEnv *env, jobject con
     X_TOUCH = alvr_path_string_to_hash("/user/hand/left/input/x/touch");
     Y_CLICK = alvr_path_string_to_hash("/user/hand/left/input/y/click");
     Y_TOUCH = alvr_path_string_to_hash("/user/hand/left/input/y/touch");
+    LEFT_SQUEEZE_CLICK = alvr_path_string_to_hash("/user/hand/left/input/squeeze/click");
     LEFT_SQUEEZE_VALUE = alvr_path_string_to_hash("/user/hand/left/input/squeeze/value");
+    LEFT_TRIGGER_CLICK = alvr_path_string_to_hash("/user/hand/left/input/trigger/click");
     LEFT_TRIGGER_VALUE = alvr_path_string_to_hash("/user/hand/left/input/trigger/value");
     LEFT_TRIGGER_TOUCH = alvr_path_string_to_hash("/user/hand/left/input/trigger/touch");
     LEFT_THUMBSTICK_X = alvr_path_string_to_hash("/user/hand/left/input/thumbstick/x");
@@ -835,7 +800,9 @@ Java_com_polygraphene_alvr_OvrActivity_initializeNative(JNIEnv *env, jobject con
     LEFT_THUMBSTICK_CLICK = alvr_path_string_to_hash("/user/hand/left/input/thumbstick/click");
     LEFT_THUMBSTICK_TOUCH = alvr_path_string_to_hash("/user/hand/left/input/thumbstick/touch");
     LEFT_THUMBREST_TOUCH = alvr_path_string_to_hash("/user/hand/left/input/thumbrest/touch");
+    RIGHT_SQUEEZE_CLICK = alvr_path_string_to_hash("/user/hand/right/input/squeeze/click");
     RIGHT_SQUEEZE_VALUE = alvr_path_string_to_hash("/user/hand/right/input/squeeze/value");
+    RIGHT_TRIGGER_CLICK = alvr_path_string_to_hash("/user/hand/right/input/trigger/click");
     RIGHT_TRIGGER_VALUE = alvr_path_string_to_hash("/user/hand/right/input/trigger/value");
     RIGHT_TRIGGER_TOUCH = alvr_path_string_to_hash("/user/hand/right/input/trigger/touch");
     RIGHT_THUMBSTICK_X = alvr_path_string_to_hash("/user/hand/right/input/thumbstick/x");
@@ -1059,7 +1026,8 @@ Java_com_polygraphene_alvr_OvrActivity_onStreamStartNative(JNIEnv *_env,
     getPlayspaceArea(&areaWidth, &areaHeight);
     alvr_send_playspace(areaWidth, areaHeight);
 
-    alvr_start_stream(decoder, codec, realTimeDecoder, textureHandles, textureHandlesBuffer[0].size());
+    alvr_start_stream(
+            decoder, codec, realTimeDecoder, textureHandles, textureHandlesBuffer[0].size());
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
